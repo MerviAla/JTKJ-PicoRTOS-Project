@@ -51,6 +51,7 @@ static void sensor_task(void *arg){
         if (programState == WAITING) {
             ambientLight = veml6030_read_light();
             programState = DATA_READY;
+            printf("Light data %u\n", ambientlight);
         }
 
         // Tehtävä 3:  Muokkaa aiemmin Tehtävässä 2 tehtyä koodia ylempänä.
@@ -107,18 +108,13 @@ static void print_task(void *arg){
         //            Tällä menetelmällä kirjoitettu data tulee antaa CSV-muodossa:
         //            timestamp, luminance
 
-        char csv[64];
-        uint32_t timestamp = xTaskGetTickCount() * portTICK_PERIOD_MS;
-        snprintf(csv, sizeof(csv), "%lu,%lu\n", timestamp, ambientLight);
-        tud_cdc_n_write(CDC_ITF_TX, csv, strlen(csv));
-        tud_cdc_n_write_flush(CDC_ITF_TX);
 
         // Exercise 3. Just for sanity check. Please, comment this out
         // Tehtävä 3: Just for sanity check. Please, comment this out
         //printf("printTask\n");
         
         // Do not remove this
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
@@ -127,13 +123,13 @@ static void print_task(void *arg){
 // Tehtävä 4:  Poista seuraavan rivin kommentointi aktivoidaksesi TinyUSB-kirjaston. 
 
 
-static void usbTask(void *arg) {
+/*static void usbTask(void *arg) {
     (void)arg;
     while (1) {
         tud_task();              // With FreeRTOS wait for events
                                  // Do not add vTaskDelay. 
     }
-}
+}*/
 
 int main() {
 
@@ -148,7 +144,7 @@ int main() {
     //             Lisää CMakeLists.txt-tiedostoon cfg-dual-usbcdc
     //             Poista CMakeLists.txt-tiedostosta käytöstä pico_enable_stdio_usb
 
-    //stdio_init_all();
+    stdio_init_all();
 
     // Uncomment this lines if you want to wait till the serial monitor is connected
     while (!stdio_usb_connected()) {
@@ -171,10 +167,10 @@ int main() {
     // Tehtävä 4: Poista tämän xTaskCreate-rivin kommentointi luodaksesi tehtävän,
     // joka mahdollistaa kaksikanavaisen USB-viestinnän.
     
-    xTaskCreate(usbTask, "usb", 2048, NULL, 3, &hUSB);
+    /*xTaskCreate(usbTask, "usb", 2048, NULL, 3, &hUSB);
     #if (configNUMBER_OF_CORES > 1)
         vTaskCoreAffinitySet(hUSB, 1u << 0);
-    #endif
+    #endif*/
 
     // Create the tasks with xTaskCreate
     BaseType_t result = xTaskCreate(sensor_task, // (en) Task function
@@ -200,7 +196,7 @@ int main() {
         return 0;
     }
 
-    usb_serial_debug_init();
+    //usb_serial_debug_init();
 
     // Start the scheduler (never returns)
     vTaskStartScheduler();
