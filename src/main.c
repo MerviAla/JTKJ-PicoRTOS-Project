@@ -39,6 +39,9 @@ static void sensor_task(void *arg){
     // Tehtävä 2: Alusta valoisuusanturi. Etsi SDK-dokumentaatiosta sopiva funktio.
     // Exercise 2: Init the light sensor. Find in the SDK documentation the adequate function.
     init_veml6030();
+
+    uint32_t light = veml6030_read_light();
+    printf("Light sensor: %u\n", light);
     
     for(;;){
         
@@ -49,9 +52,9 @@ static void sensor_task(void *arg){
         // tight_loop_contents(); 
         
         if (programState == WAITING) {
-            ambientLight = veml6030_read_light();
+            light = veml6030_read_light();
+            ambientLight = light;
             programState = DATA_READY;
-            printf("Light data %u\n", ambientlight);
         }
 
         // Tehtävä 3:  Muokkaa aiemmin Tehtävässä 2 tehtyä koodia ylempänä.
@@ -86,10 +89,8 @@ static void print_task(void *arg){
         // tight_loop_contents();
 
         if (programState == DATA_READY) {
-            char buffer[64];
-            snprintf(buffer, sizeof(buffer), "Lux: %lu\n", ambientLight);
-            usb_serial_print(buffer);
-            programState = WAITING;
+            printf("Light: %u", ambientLight);
+            programState == WAITING;
         }
         
         // Exercise 4. Use the usb_serial_print() instead of printf or similar in the previous line.
@@ -147,9 +148,9 @@ int main() {
     stdio_init_all();
 
     // Uncomment this lines if you want to wait till the serial monitor is connected
-    while (!stdio_usb_connected()) {
+    /*while (!stdio_usb_connected()) {
         sleep_ms(10);
-    } 
+    }*/ 
     
     init_hat_sdk();
     sleep_ms(300); //Wait some time so initialization of USB and hat is done.
@@ -158,8 +159,13 @@ int main() {
     //             Interruption handler is defined up as btn_fxn
     // Tehtävä 1:  Alusta painike ja LEd ja rekisteröi vastaava keskeytys.
     //             Keskeytyskäsittelijä on määritelty yläpuolella nimellä btn_fxn
-    init_button();
-    init_led();
+    gpio_init(BUTTON1);
+    gpio_set_dir(BUTTON1, GPIO_IN);
+    
+    gpio_init(LED1);
+    gpio_set_dir(LED1, GPIO_OUT);
+
+    gpio_set_irq_enabled_with_callback(BUTTON1, GPIO_IRQ_EDGE_RISE, true, btn_fxn);
     
     TaskHandle_t hSensorTask, hPrintTask, hUSB = NULL;
 
